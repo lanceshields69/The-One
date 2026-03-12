@@ -1,0 +1,1575 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Open Me?</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@1,300;1,400&display=swap" rel="stylesheet" />
+
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --door-w: 240px;
+      --door-h: 530px;
+      --frame-w: 20px;
+      --frame-outer: 6px;
+
+      --wood-base:      #6B3820;
+      --wood-dark:      #3E1F0C;
+      --wood-mid:       #5C2E14;
+      --wood-light:     #8E5035;
+      --wood-hi:        #A0603E;
+
+      --frame-base:     #2E140A;
+      --frame-dark:     #1A0A04;
+
+      --brass-dark:     #7A5010;
+      --brass-mid:      #C8922A;
+      --brass-light:    #E8B848;
+      --brass-hi:       #FCD96A;
+
+      --glow-hot:       rgba(255, 220, 90, 1);
+      --glow-warm:      rgba(255, 185, 55, 0.55);
+      --glow-cool:      rgba(255, 155, 35, 0.25);
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+    }
+
+    body {
+      background: #ffffff;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      perspective: 700px;
+      perspective-origin: 50% 48%;
+    }
+
+    /* Barely-there ambient warmth on the page centered on the door */
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(
+        ellipse 55% 55% at 50% 50%,
+        rgba(255, 230, 190, 0.055) 0%,
+        transparent 70%
+      );
+      pointer-events: none;
+    }
+
+    /* ───── SCENE ───── */
+    .scene {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+      animation: door-enter 5s linear both;
+      transform-style: preserve-3d;
+    }
+
+    /* ───── OUTER DOOR CASING (architrave trim) ───── */
+    .casing {
+      position: relative;
+      display: inline-flex;
+      flex-direction: column;
+      /* box-shadow instead of filter so 3D children render correctly */
+      box-shadow:
+        0 22px 42px rgba(0,0,0,0.16),
+        0  6px 14px rgba(0,0,0,0.10);
+    }
+
+    /* Top casing */
+    .casing-top {
+      height: calc(var(--frame-w) + var(--frame-outer));
+      width: calc(var(--door-w) + (var(--frame-w) + var(--frame-outer)) * 2);
+      background:
+        repeating-linear-gradient(
+          90deg,
+          transparent 0px, transparent 6px,
+          rgba(0,0,0,0.025) 6px, rgba(0,0,0,0.025) 7px
+        ),
+        linear-gradient(180deg,
+          #241008 0%,
+          var(--frame-base) 35%,
+          #3D1E0E 65%,
+          #221008 100%
+        );
+      border-radius: 3px 3px 0 0;
+      box-shadow: inset 0 -2px 0 rgba(0,0,0,0.45);
+    }
+
+    /* Bottom of top casing — a thin reveal line */
+    .casing-top::after {
+      content: '';
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      height: 3px;
+      background: var(--frame-dark);
+    }
+
+    /* Side casings row */
+    .casing-sides {
+      display: flex;
+    }
+
+    .casing-side {
+      width: calc(var(--frame-w) + var(--frame-outer));
+      height: var(--door-h);
+      background:
+        repeating-linear-gradient(
+          180deg,
+          transparent 0px, transparent 5px,
+          rgba(0,0,0,0.02) 5px, rgba(0,0,0,0.02) 6px
+        ),
+        linear-gradient(90deg,
+          #221008 0%,
+          var(--frame-base) 40%,
+          #3D1E0E 70%,
+          #221008 100%
+        );
+    }
+
+    .casing-side.left {
+      box-shadow:
+        -2px 0 0 var(--frame-dark),
+        inset -4px 0 10px rgba(0,0,0,0.5);
+    }
+
+    .casing-side.right {
+      box-shadow:
+        2px 0 0 var(--frame-dark),
+        inset 4px 0 10px rgba(0,0,0,0.5);
+    }
+
+    /* ───── THE DOOR ───── */
+    .door {
+      position: absolute;
+      inset: 0;
+      cursor: pointer;
+      transform-origin: left center;
+      transform-style: preserve-3d;
+
+      /* Wood grain: thin horizontal lines + subtle vertical variation + deep base */
+      background:
+        repeating-linear-gradient(
+          180deg,
+          transparent 0px, transparent 2px,
+          rgba(0,0,0,0.016) 2px, rgba(0,0,0,0.016) 3px
+        ),
+        repeating-linear-gradient(
+          90deg,
+          transparent 0px, transparent 9px,
+          rgba(0,0,0,0.012) 9px, rgba(0,0,0,0.012) 10px,
+          transparent 10px, transparent 20px,
+          rgba(255,255,255,0.012) 20px, rgba(255,255,255,0.012) 21px
+        ),
+        linear-gradient(
+          171deg,
+          #7C4528 0%,
+          #5A2D14 7%,
+          #7C4528 16%,
+          #6A3820 25%,
+          #8C5030 35%,
+          #5A2D14 46%,
+          #7C4528 54%,
+          #6A3820 63%,
+          #9A5A38 70%,
+          #5A2D14 80%,
+          #7C4528 89%,
+          #6A3820 100%
+        );
+
+      box-shadow:
+        inset 0 0 40px rgba(0,0,0,0.22),
+        inset  4px 0 12px rgba(255,255,255,0.04),
+        inset -4px 0 12px rgba(0,0,0,0.15);
+    }
+
+    /* Top edge glint */
+    .door::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: rgba(255,255,255,0.13);
+      z-index: 20;
+    }
+
+    /* Bottom edge shadow */
+    .door::after {
+      content: '';
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      height: 5px;
+      background: rgba(0,0,0,0.35);
+      z-index: 20;
+    }
+
+    /* ───── PANELS ───── */
+    .panels {
+      position: absolute;
+      inset: 22px 18px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: 5fr 8fr;
+      gap: 14px;
+      z-index: 2;
+    }
+
+    .panel {
+      position: relative;
+      border-radius: 2px;
+    }
+
+    /* Recessed center */
+    .panel::before {
+      content: '';
+      position: absolute;
+      inset: 6px;
+      background: linear-gradient(
+        140deg,
+        rgba(0,0,0,0.06) 0%,
+        rgba(0,0,0,0.14) 100%
+      );
+      border-radius: 1px;
+    }
+
+    /* Bevel ring — raised molding effect */
+    .panel::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 2px;
+      box-shadow:
+        /* Light top-left edges */
+        inset  0  2px 0 rgba(255,255,255,0.16),
+        inset  2px 0  0 rgba(255,255,255,0.09),
+        /* Dark bottom-right edges */
+        inset  0 -2px 0 rgba(0,0,0,0.38),
+        inset -2px 0  0 rgba(0,0,0,0.22),
+        /* Outer cast shadow */
+        0 2px 5px rgba(0,0,0,0.38),
+        0 -1px 0  rgba(255,255,255,0.07),
+        /* Outer rim */
+        inset 0 0 0 1px rgba(0,0,0,0.12);
+    }
+
+    /* ───── HINGES (left side) ───── */
+    .hinge {
+      position: absolute;
+      left: 0;
+      width: 11px;
+      height: 30px;
+      background: linear-gradient(
+        90deg,
+        #6A5820 0%,
+        #B8A050 35%,
+        #D4B860 50%,
+        #B8A050 65%,
+        #6A5820 100%
+      );
+      border-radius: 2px;
+      box-shadow:
+        1px 0 4px rgba(0,0,0,0.5),
+        inset 0 1px 0 rgba(255,255,255,0.25);
+      z-index: 5;
+    }
+
+    .hinge::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 35% 35%, #E0C870 0%, #7A6020 100%);
+      box-shadow: inset 0 1px 2px rgba(0,0,0,0.4);
+    }
+
+    .hinge-top    { top: 18%; }
+    .hinge-bottom { bottom: 18%; }
+
+    /* ───── ESCUTCHEON (knob backplate) ───── */
+    .escutcheon {
+      position: absolute;
+      right: 28px;
+      top: 56%;
+      transform: translateY(-50%);
+      width: 15px;
+      height: 40px;
+      background: linear-gradient(
+        180deg,
+        #7A5010 0%,
+        #B8821E 25%,
+        var(--brass-mid) 50%,
+        #B8821E 75%,
+        #7A5010 100%
+      );
+      border-radius: 8px;
+      box-shadow:
+        1px 2px 5px rgba(0,0,0,0.55),
+        inset 0  1px 0 rgba(255,255,255,0.22),
+        inset 0 -1px 0 rgba(0,0,0,0.3);
+      z-index: 8;
+    }
+
+    /* Keyhole */
+    .escutcheon::after {
+      content: '';
+      position: absolute;
+      bottom: 7px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 5px;
+      height: 6px;
+      background: rgba(10,4,0,0.85);
+      border-radius: 50% 50% 0 0;
+      box-shadow: 0 3px 0 2px rgba(10,4,0,0.85);
+    }
+
+    /* ───── DOOR KNOB ───── */
+    .knob {
+      position: absolute;
+      right: 22px;
+      top: 54.5%;
+      transform: translateY(-50%);
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: radial-gradient(
+        circle at 36% 30%,
+        var(--brass-hi) 0%,
+        var(--brass-light) 20%,
+        var(--brass-mid) 48%,
+        #9A6C1A 72%,
+        var(--brass-dark) 100%
+      );
+      z-index: 12;
+      animation: knob-glow 3s ease-in-out infinite;
+    }
+
+    /* Primary specular highlight */
+    .knob::before {
+      content: '';
+      position: absolute;
+      top: 16%;
+      left: 20%;
+      width: 36%;
+      height: 36%;
+      border-radius: 50%;
+      background: rgba(255, 248, 218, 0.7);
+      filter: blur(2px);
+    }
+
+    /* Cast shadow under knob */
+    .knob::after {
+      content: '';
+      position: absolute;
+      bottom: -4px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 70%;
+      height: 5px;
+      background: rgba(0,0,0,0.28);
+      border-radius: 50%;
+      filter: blur(2px);
+    }
+
+    /* ───── "open me?" TEXT ───── */
+    .open-me {
+      position: absolute;
+      top: 43%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-family: 'Cormorant Garamond', serif;
+      font-style: italic;
+      font-weight: 300;
+      font-size: 1.575rem;
+      letter-spacing: 0.22em;
+      color: rgba(255, 238, 192, 0.95);
+      text-shadow:
+        0 0  7px rgba(255, 210, 100, 0.75),
+        0 0 18px rgba(255, 185, 60, 0.45),
+        0 0 36px rgba(255, 160, 40, 0.22),
+        0 1px 3px rgba(0, 0, 0, 0.55);
+      white-space: nowrap;
+      pointer-events: none;
+      user-select: none;
+      z-index: 15;
+      opacity: 0;
+      animation: whisper 4.2s ease-in-out 5.8s infinite;
+    }
+
+    /* ───── FLOOR SHADOW ───── */
+    .floor-shadow {
+      width: calc(var(--door-w) + (var(--frame-w) + var(--frame-outer)) * 2 + 60px);
+      height: 22px;
+      background: radial-gradient(
+        ellipse at center,
+        rgba(0,0,0,0.13) 0%,
+        rgba(0,0,0,0.05) 50%,
+        transparent 70%
+      );
+    }
+
+    /* ───── ANIMATIONS ───── */
+
+    @keyframes whisper {
+      0%         { opacity: 0; }
+      18%        { opacity: 1; }
+      68%        { opacity: 1; }
+      88%        { opacity: 0; }
+      100%       { opacity: 0; }
+    }
+
+    /* ───── DOOR AREA ───── */
+    .door-area {
+      position: relative;
+      width: var(--door-w);
+      height: var(--door-h);
+      flex-shrink: 0;
+      transform-style: preserve-3d;
+    }
+
+    /* ───── SKY SCENE ───── */
+    .sky-scene {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      background: linear-gradient(
+        180deg,
+        #0c4fa0 0%,
+        #1a6ec8 16%,
+        #3a98ec 40%,
+        #70bef4 65%,
+        #a6d8f8 83%,
+        #ceeafc 100%
+      );
+      z-index: 0;
+    }
+
+    /* Horizon haze */
+    .sky-scene::after {
+      content: '';
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      height: 30%;
+      background: linear-gradient(to top, rgba(210,238,255,0.55), transparent);
+      pointer-events: none;
+    }
+
+    /* Sun */
+    .sky-sun {
+      position: absolute;
+      top: 10%;
+      right: 16%;
+      width: 46px;
+      height: 46px;
+      border-radius: 50%;
+      background: radial-gradient(
+        circle,
+        #fffef0 0%,
+        #fff5b0 30%,
+        rgba(255, 228, 100, 0.45) 60%,
+        transparent 100%
+      );
+      box-shadow:
+        0 0 16px  8px rgba(255, 242, 150, 0.65),
+        0 0 40px 18px rgba(255, 210,  80, 0.28);
+    }
+
+    /* ───── CLOUDS ───── */
+    .cloud {
+      position: absolute;
+      filter: drop-shadow(0 6px 10px rgba(20, 80, 150, 0.13));
+    }
+
+    .cloud .puff {
+      position: absolute;
+      display: block;
+      background: rgba(255, 255, 255, 0.96);
+      border-radius: 50%;
+    }
+
+    /* Cloud 1 — large, drifts slow */
+    .cloud-1 { top: 15%; animation: cloud-drift 34s linear -11s infinite; }
+    .cloud-1 .p1 { width: 80px; height: 54px; bottom: 0;    left: 0;    border-radius: 50% 50% 46% 46% / 56% 56% 44% 44%; }
+    .cloud-1 .p2 { width: 62px; height: 62px; bottom: 16px; left: 42px; }
+    .cloud-1 .p3 { width: 52px; height: 52px; bottom: 22px; left: 84px; }
+    .cloud-1 .p4 { width: 66px; height: 48px; bottom: 8px;  left: 110px; border-radius: 50% 50% 46% 46% / 56% 56% 44% 44%; }
+    .cloud-1 .p5 { width: 42px; height: 36px; bottom: 0;    left: 152px; border-radius: 50% 50% 46% 46% / 56% 56% 44% 44%; }
+
+    /* Cloud 2 — small, medium speed */
+    .cloud-2 { top: 54%; animation: cloud-drift 20s linear -5s infinite; }
+    .cloud-2 .p1 { width: 52px; height: 36px; bottom: 0;    left: 0;   border-radius: 50% 50% 46% 46% / 56% 56% 44% 44%; }
+    .cloud-2 .p2 { width: 42px; height: 42px; bottom: 10px; left: 28px; }
+    .cloud-2 .p3 { width: 34px; height: 34px; bottom: 6px;  left: 60px; }
+    .cloud-2 .p4 { width: 44px; height: 30px; bottom: 0;    left: 80px; border-radius: 50% 50% 46% 46% / 56% 56% 44% 44%; }
+
+    /* Cloud 3 — medium, faster */
+    .cloud-3 { top: 34%; animation: cloud-drift 24s linear -18s infinite; }
+    .cloud-3 .p1 { width: 64px; height: 44px; bottom: 0;    left: 0;    border-radius: 50% 50% 46% 46% / 56% 56% 44% 44%; }
+    .cloud-3 .p2 { width: 52px; height: 52px; bottom: 14px; left: 36px; }
+    .cloud-3 .p3 { width: 44px; height: 44px; bottom: 18px; left: 74px; }
+    .cloud-3 .p4 { width: 56px; height: 42px; bottom: 4px;  left: 98px; border-radius: 50% 50% 46% 46% / 56% 56% 44% 44%; }
+
+    @keyframes cloud-drift {
+      from { transform: translateX(280px); }
+      to   { transform: translateX(-260px); }
+    }
+
+    /* ───── DOOR EDGE (3D thickness strip) ───── */
+    .door-edge {
+      position: absolute;
+      top: 0;
+      left: 100%;          /* sits flush at the right edge of the door face */
+      width: 14px;
+      height: 100%;
+      transform-origin: left center;
+      transform: rotateY(90deg);   /* folds 90° from door face into 3D space */
+      background:
+        repeating-linear-gradient(
+          180deg,
+          transparent 0px, transparent 3px,
+          rgba(0,0,0,0.05) 3px, rgba(0,0,0,0.05) 4px
+        ),
+        linear-gradient(
+          90deg,
+          #1E0C06 0%,
+          #351408 30%,
+          #4A1E0A 55%,
+          #351408 78%,
+          #1E0C06 100%
+        );
+      box-shadow: inset -3px 0 8px rgba(0,0,0,0.5);
+    }
+
+    /* ───── DOOR INTERACTION STATES ───── */
+
+    .door.is-open .open-me {
+      animation: none;
+      opacity: 0;
+      transition: opacity 0.2s ease;
+    }
+
+    .door.is-open {
+      animation: door-swing-open 1.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    }
+
+    @keyframes door-swing-open {
+      0%   { transform: perspective(1400px) rotateY(   0deg); }
+      100% { transform: perspective(1400px) rotateY( -92deg); }
+    }
+
+    /* ───── ENTER ARROW ───── */
+    .enter-arrow {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 68px;
+      height: 99px;
+      margin-top: -50px;
+      margin-left: -34px;
+      cursor: pointer;
+      opacity: 0;
+      pointer-events: none;
+      z-index: 20;
+      transition: opacity 0.7s ease;
+      transform-style: preserve-3d;
+    }
+
+    .enter-arrow.visible {
+      opacity: 1;
+      pointer-events: auto;
+      animation: arrow-float 2.8s ease-in-out infinite;
+    }
+
+    .enter-arrow svg { width: 100%; height: 100%; display: block; }
+
+    @keyframes arrow-float {
+      0%, 100% {
+        transform: perspective(140px) rotateX(30deg) translateY(0px);
+        filter: drop-shadow(0 8px 18px rgba(255,255,255,0.52))
+                drop-shadow(0 0 32px rgba(175,215,255,0.42));
+      }
+      50% {
+        transform: perspective(140px) rotateX(30deg) translateY(-14px);
+        filter: drop-shadow(0 14px 30px rgba(255,255,255,0.86))
+                drop-shadow(0 0 52px rgba(175,215,255,0.70));
+      }
+    }
+
+    /* ───── FLY-THROUGH ───── */
+    @keyframes scene-rush {
+      0%   { transform: scale(1);  opacity: 1; }
+      50%  { transform: scale(7);  opacity: 0.95; }
+      82%  { transform: scale(18); opacity: 0.25; }
+      100% { transform: scale(26); opacity: 0; }
+    }
+
+    /* ───── FULLSCREEN SKY ───── */
+    .sky-fs {
+      position: fixed;
+      inset: 0;
+      z-index: 200;
+      background: linear-gradient(
+        180deg,
+        #0c4fa0 0%,
+        #1a6ec8 15%,
+        #3a98ec 38%,
+        #70bef4 62%,
+        #a8d8f8 82%,
+        #ceeafc 100%
+      );
+      opacity: 0;
+      pointer-events: none;
+      overflow: hidden;
+      transition: opacity 0.9s ease;
+    }
+
+    .sky-fs.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .sky-fs::after {
+      content: '';
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      height: 22%;
+      background: linear-gradient(to top, rgba(200,235,255,0.5), transparent);
+      pointer-events: none;
+    }
+
+    .sky-fs-sun {
+      position: absolute;
+      top: 7%;
+      right: 11%;
+      width: 82px;
+      height: 82px;
+      border-radius: 50%;
+      background: radial-gradient(
+        circle,
+        #fffef0 0%, #fff5b0 30%,
+        rgba(255,228,100,0.4) 65%,
+        transparent 100%
+      );
+      opacity: 0; /* hidden until 75 % through the crawl */
+    }
+
+    /* Slide in at 10s → hold at 50% → brighten to full over 20s → then pulse glow */
+    body.crawling .sky-fs-sun {
+      animation:
+        sun-rise    5s  cubic-bezier(0.25, 0, 0.4, 1)  forwards 10s,
+        sun-brighten 20s ease-in                        forwards 15s,
+        sun-shine   7s  ease-in-out                     infinite  35s;
+    }
+
+    @keyframes sun-rise {
+      from { opacity: 0;   transform: translateX(60px); }
+      to   { opacity: 0.5; transform: translateX(0);    }
+    }
+
+    @keyframes sun-brighten {
+      from { opacity: 0.5; }
+      to   { opacity: 1;   }
+    }
+
+    @keyframes sun-shine {
+      0%, 100% {
+        box-shadow:
+          0 0 30px 14px rgba(255,242,150,0.52),
+          0 0 70px 30px rgba(255,210,80,0.22),
+          0 0 140px 60px rgba(255,200,60,0.10);
+      }
+      50% {
+        box-shadow:
+          0 0 48px 22px rgba(255,250,170,0.82),
+          0 0 110px 50px rgba(255,215,80,0.42),
+          0 0 200px 90px rgba(255,200,60,0.18);
+      }
+    }
+
+    /* ───── FULLSCREEN CLOUDS ───── */
+    .fc {
+      position: absolute;
+      filter: drop-shadow(0 8px 16px rgba(20,80,150,0.10));
+    }
+
+    .fc .p {
+      position: absolute;
+      display: block;
+      background: rgba(255,255,255,0.93);
+      border-radius: 50%;
+    }
+
+    /* sm */
+    .fc.sm .p.a { width:  66px; height: 45px; bottom:  0;   left:   0; border-radius: 50% 50% 46% 46%/56% 56% 44% 44%; }
+    .fc.sm .p.b { width:  52px; height: 52px; bottom: 11px; left:  34px; }
+    .fc.sm .p.c { width:  42px; height: 42px; bottom: 14px; left:  68px; }
+    .fc.sm .p.d { width:  54px; height: 39px; bottom:  2px; left:  94px; border-radius: 50% 50% 46% 46%/56% 56% 44% 44%; }
+
+    /* md */
+    .fc.md .p.a { width: 108px; height: 74px; bottom:  0;   left:   0; border-radius: 50% 50% 46% 46%/56% 56% 44% 44%; }
+    .fc.md .p.b { width:  86px; height: 86px; bottom: 18px; left:  58px; }
+    .fc.md .p.c { width:  70px; height: 70px; bottom: 23px; left: 114px; }
+    .fc.md .p.d { width:  90px; height: 64px; bottom:  4px; left: 154px; border-radius: 50% 50% 46% 46%/56% 56% 44% 44%; }
+
+    /* lg */
+    .fc.lg .p.a { width: 152px; height: 104px; bottom:  0;   left:   0; border-radius: 50% 50% 46% 46%/56% 56% 44% 44%; }
+    .fc.lg .p.b { width: 120px; height: 120px; bottom: 25px; left:  82px; }
+    .fc.lg .p.c { width:  98px; height:  98px; bottom: 32px; left: 168px; }
+    .fc.lg .p.d { width: 126px; height:  90px; bottom:  5px; left: 230px; border-radius: 50% 50% 46% 46%/56% 56% 44% 44%; }
+
+    /* fs — flat/wispy: very low profile, wide stretched base, modest domes */
+    .fc.fs .p.a { width: 175px; height:  52px; bottom:  0;   left:   0;   border-radius: 50% 50% 46% 46%/56% 56% 44% 44%; }
+    .fc.fs .p.b { width:  88px; height:  80px; bottom: 16px; left: 108px; }
+    .fc.fs .p.c { width:  62px; height:  55px; bottom: 24px; left: 185px; }
+    .fc.fs .p.d { width: 130px; height:  42px; bottom:  2px; left: 218px; border-radius: 50% 50% 46% 46%/56% 56% 44% 44%; }
+
+    /* cu — cumulus: compact with a dramatic tall central dome */
+    .fc.cu .p.a { width:  80px; height:  55px; bottom:  0;   left:   0;   border-radius: 50% 50% 46% 46%/56% 56% 44% 44%; }
+    .fc.cu .p.b { width: 110px; height: 122px; bottom:  6px; left:  46px; }
+    .fc.cu .p.c { width:  86px; height:  86px; bottom: 34px; left: 132px; }
+    .fc.cu .p.d { width:  70px; height:  50px; bottom:  4px; left: 196px; border-radius: 50% 50% 46% 46%/56% 56% 44% 44%; }
+
+    .fc.lr { animation: fs-lr var(--spd, 42s) linear var(--del, 0s) infinite; }
+    .fc.rl { animation: fs-rl var(--spd, 42s) linear var(--del, 0s) infinite; }
+
+    /* Dim clouds to match dark sky on entry */
+    body.inside .fc { opacity: 0.18; }
+
+    /* During crawl: per-size reveal targets (lg=most opaque → sm=most transparent) */
+    body.crawling .fc.lr.lg { animation: fs-lr var(--spd,42s) linear var(--del,0s) infinite, cloud-reveal-lg 60s linear forwards; }
+    body.crawling .fc.rl.lg { animation: fs-rl var(--spd,42s) linear var(--del,0s) infinite, cloud-reveal-lg 60s linear forwards; }
+    body.crawling .fc.lr.fs { animation: fs-lr var(--spd,42s) linear var(--del,0s) infinite, cloud-reveal-fs 60s linear forwards; }
+    body.crawling .fc.rl.fs { animation: fs-rl var(--spd,42s) linear var(--del,0s) infinite, cloud-reveal-fs 60s linear forwards; }
+    body.crawling .fc.lr.cu { animation: fs-lr var(--spd,42s) linear var(--del,0s) infinite, cloud-reveal-cu 60s linear forwards; }
+    body.crawling .fc.rl.cu { animation: fs-rl var(--spd,42s) linear var(--del,0s) infinite, cloud-reveal-cu 60s linear forwards; }
+    body.crawling .fc.lr.md { animation: fs-lr var(--spd,42s) linear var(--del,0s) infinite, cloud-reveal-md 60s linear forwards; }
+    body.crawling .fc.rl.md { animation: fs-rl var(--spd,42s) linear var(--del,0s) infinite, cloud-reveal-md 60s linear forwards; }
+    body.crawling .fc.lr.sm { animation: fs-lr var(--spd,42s) linear var(--del,0s) infinite, cloud-reveal-sm 60s linear forwards; }
+    body.crawling .fc.rl.sm { animation: fs-rl var(--spd,42s) linear var(--del,0s) infinite, cloud-reveal-sm 60s linear forwards; }
+
+    @keyframes cloud-reveal-lg { from { opacity: 0.18; } to { opacity: 0.68; } }
+    @keyframes cloud-reveal-fs { from { opacity: 0.18; } to { opacity: 0.58; } }
+    @keyframes cloud-reveal-cu { from { opacity: 0.18; } to { opacity: 0.55; } }
+    @keyframes cloud-reveal-md { from { opacity: 0.18; } to { opacity: 0.38; } }
+    @keyframes cloud-reveal-sm { from { opacity: 0.18; } to { opacity: 0.30; } }
+
+    @keyframes fs-lr {
+      from { transform: translateX(-520px); }
+      to   { transform: translateX(calc(100vw + 520px)); }
+    }
+
+    @keyframes fs-rl {
+      from { transform: translateX(calc(100vw + 420px)); }
+      to   { transform: translateX(-520px); }
+    }
+
+    /* ───── WELCOME TEXT ───── */
+    .welcome-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) scale(0.45);
+      font-family: 'Cormorant Garamond', serif;
+      font-style: italic;
+      font-weight: 300;
+      font-size: 36px;
+      letter-spacing: 0.2em;
+      color: rgba(255,252,248,0.92);
+      text-shadow:
+        0 0 24px rgba(255,255,255,0.55),
+        0 2px 10px rgba(0,50,130,0.35);
+      white-space: nowrap;
+      pointer-events: none;
+      user-select: none;
+      opacity: 0;
+      z-index: 10;
+    }
+
+    .welcome-text.show {
+      animation: welcome-reveal 3s ease forwards;
+    }
+
+    @keyframes welcome-reveal {
+      0%   { opacity: 0;    transform: translate(-50%, -50%) scale(0.45); }
+      25%  { opacity: 0.92; transform: translate(-50%, -50%) scale(1);    }
+      58%  { opacity: 0.92; transform: translate(-50%, -50%) scale(1);    }
+      100% { opacity: 0;    transform: translate(-50%, -50%) scale(1.03); }
+    }
+
+    /* ───── SCROLL CRAWL ───── */
+    #crawlWrap {
+      position: fixed;
+      inset: 0;
+      z-index: 400;
+      background: transparent;
+      overflow: hidden;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 1s ease;
+    }
+
+    #crawlWrap.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    #crawlText {
+      position: absolute;
+      top: 100%;        /* first line starts right at viewport bottom */
+      left: 50%;
+      width: 58%;
+      transform: translateX(-50%);
+      text-align: center;
+      font-family: 'Cormorant Garamond', serif;
+      font-style: italic;
+      font-weight: 300;
+      font-size: 1.9rem;
+      line-height: 2.4;
+      color: rgba(255, 255, 255, 0.93);
+      letter-spacing: 0.06em;
+      text-shadow:
+        0 1px 10px rgba(0, 30, 90, 0.4),
+        0 0  30px rgba(0, 10, 50, 0.2);
+    }
+
+    #crawlText h2 {
+      font-family: 'Cormorant Garamond', serif;
+      font-style: normal;
+      font-weight: 300;
+      font-size: 1.88rem;
+      letter-spacing: 0.55em;
+      color: rgba(255, 255, 255, 0.96);
+      margin: 0 0 2.8em;
+      text-indent: 0.55em; /* compensates letter-spacing on last char */
+    }
+
+    #crawlText p {
+      margin: 0 0 2.6em;
+    }
+
+    #crawlWrap.active #crawlText {
+      animation: crawl-up 80s linear forwards;
+    }
+
+    @keyframes crawl-up {
+      from { transform: translateX(-50%) translateY(0); }
+      to   { transform: translateX(-50%) translateY(calc(-100% - 100vh)); }
+    }
+
+    /* ───── SKY CREATURES ───── */
+    /* ───── BIRDS ───── */
+    #sky-creatures {
+      position: fixed;
+      inset: 0;
+      z-index: 250;
+      pointer-events: none;
+    }
+
+    .bird {
+      position: absolute;
+      opacity: 0;
+    }
+
+    /* Inner wrapper — flip for left→right birds */
+    .bird-content {
+      position: relative;
+      width: 100%;
+      height: 100%;
+    }
+    .bird-content.flip { transform: scaleX(-1); }
+
+    /* Frame containers — stacked, hidden by default */
+    .bf {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+    }
+    .bf svg { width: 100%; height: 100%; display: block; }
+
+    /*
+      6s cycle per bird: 4s glide (f1 only) + 2s flapping (f2→f3→f4 × 4 cycles at 0.5s each)
+      Percentages of 6s:  glide = 0–66.67%,  each flap frame = 2.78%
+    */
+
+    /* f1 — glide/float frame: on for the first 4s, off during the 2s flap burst */
+    @keyframes bird-f1 {
+      0%,    66.66% { opacity: 1; }
+      66.67%, 100%  { opacity: 0; }
+    }
+
+    /* f2 — wings high: fires at the start of each 0.5s flap cycle (×4) */
+    @keyframes bird-f2 {
+      0%,    66.66% { opacity: 0; }
+      66.67%, 69.43% { opacity: 1; }
+      69.44%, 74.99% { opacity: 0; }
+      75.00%, 77.77% { opacity: 1; }
+      77.78%, 83.32% { opacity: 0; }
+      83.33%, 86.10% { opacity: 1; }
+      86.11%, 91.66% { opacity: 0; }
+      91.67%, 94.43% { opacity: 1; }
+      94.44%, 100%   { opacity: 0; }
+    }
+
+    /* f3 — wings flat: fires in the middle of each flap cycle */
+    @keyframes bird-f3 {
+      0%,    69.43% { opacity: 0; }
+      69.44%, 72.21% { opacity: 1; }
+      72.22%, 77.77% { opacity: 0; }
+      77.78%, 80.55% { opacity: 1; }
+      80.56%, 86.10% { opacity: 0; }
+      86.11%, 88.88% { opacity: 1; }
+      88.89%, 94.43% { opacity: 0; }
+      94.44%, 97.21% { opacity: 1; }
+      97.22%, 100%   { opacity: 0; }
+    }
+
+    /* f4 — wings down: fires at the end of each flap cycle */
+    @keyframes bird-f4 {
+      0%,    72.21% { opacity: 0; }
+      72.22%, 74.99% { opacity: 1; }
+      75.00%, 80.55% { opacity: 0; }
+      80.56%, 83.32% { opacity: 1; }
+      83.33%, 88.88% { opacity: 0; }
+      88.89%, 91.66% { opacity: 1; }
+      91.67%, 97.21% { opacity: 0; }
+      97.22%, 99.99% { opacity: 1; }
+      100%           { opacity: 0; }
+    }
+
+    .bf.f1 { animation: bird-f1 6s linear infinite; }
+    .bf.f2 { animation: bird-f2 6s linear infinite; }
+    .bf.f3 { animation: bird-f3 6s linear infinite; }
+    .bf.f4 { animation: bird-f4 6s linear infinite; }
+
+    /* Bird 1 — halved glide pause: 3s cycle (2s glide + 1s flap) */
+    #bird-1 .bf.f1 { animation-duration: 3s; }
+    #bird-1 .bf.f2 { animation-duration: 3s; }
+    #bird-1 .bf.f3 { animation-duration: 3s; }
+    #bird-1 .bf.f4 { animation-duration: 3s; }
+
+    /* Bird sizes & vertical slots (square to match 164×164 viewBox) */
+    /* Opacity scales with size: 80px=0.80, 60px=0.40 (linear interpolation) */
+    #bird-1 { top: 16%; width: 80px; height: 80px; }
+    #bird-2 { top: 31%; width: 72px; height: 72px; }
+    #bird-4 { top: 42%; width: 60px; height: 60px; }
+
+    /*
+      Each bird loops infinitely. The crossing occupies a leading fraction of the
+      keyframe; the bird then snaps back invisibly and waits off-screen until 100%.
+      Max-opacity values per bird: 80px→0.80, 76px→0.72, 72px→0.64,
+                                   68px→0.56, 64px→0.48, 60px→0.40
+    */
+
+    /* Bird 1 — right→left, 80px, cycle 35s, delay 0s */
+    body.crawling #bird-1 { animation: b1-fly 35s linear infinite 0s; }
+    @keyframes b1-fly {
+      0%    { transform: translateX(calc(100vw + 85px)) translateY(0);     opacity: 0;    }
+      4%    {                                                                opacity: 0.40; }
+      17%   { transform: translateX(60vw)               translateY(-2vh);  opacity: 0.40; }
+      31%   { transform: translateX(18vw)               translateY(-3.5vh); opacity: 0.40; }
+      32%   {                                                                opacity: 0.40; }
+      34%   { transform: translateX(-85px)              translateY(-1vh);  opacity: 0;    }
+      34.1% { transform: translateX(calc(100vw + 85px)) translateY(0);     opacity: 0;    }
+      100%  { transform: translateX(calc(100vw + 85px)) translateY(0);     opacity: 0;    }
+    }
+
+    /* Bird 2 — left→right, 72px, cycle 45s, delay 7s */
+    body.crawling #bird-2 { animation: b2-fly 45s linear infinite 7s; }
+    @keyframes b2-fly {
+      0%    { transform: translateX(-77px)              translateY(0);     opacity: 0;    }
+      4%    {                                                                opacity: 0.32; }
+      20%   { transform: translateX(38vw)               translateY(-2.5vh); opacity: 0.32; }
+      37%   { transform: translateX(72vw)               translateY(-1vh);  opacity: 0.32; }
+      38%   {                                                                opacity: 0.32; }
+      40%   { transform: translateX(calc(100vw + 77px)) translateY(0.5vh); opacity: 0;    }
+      40.1% { transform: translateX(-77px)              translateY(0);     opacity: 0;    }
+      100%  { transform: translateX(-77px)              translateY(0);     opacity: 0;    }
+    }
+
+    /* Bird 4 — left→right, 60px, cycle 72s, delay 35s */
+    body.crawling #bird-4 { animation: b4-fly 72s linear infinite 35s; }
+    @keyframes b4-fly {
+      0%    { transform: translateX(-65px)              translateY(0);     opacity: 0;    }
+      2%    {                                                                opacity: 0.20; }
+      29%   { transform: translateX(40vw)               translateY(-4vh);  opacity: 0.20; }
+      56%   { transform: translateX(80vw)               translateY(-2vh);  opacity: 0.20; }
+      57%   {                                                                opacity: 0.20; }
+      58%   { transform: translateX(calc(100vw + 65px)) translateY(0);     opacity: 0;    }
+      58.1% { transform: translateX(-65px)              translateY(0);     opacity: 0;    }
+      100%  { transform: translateX(-65px)              translateY(0);     opacity: 0;    }
+    }
+
+
+    /* ───── PAPER AIRPLANES ───── */
+    .plane {
+      position: absolute;
+      opacity: 0;
+    }
+    .plane-content {
+      position: relative;
+      width: 100%;
+      height: 100%;
+    }
+    .plane-content.flip { transform: scaleX(-1); }
+
+    .pf {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+    }
+    .pf svg { width: 100%; height: 100%; display: block; filter: invert(1); }
+
+    /* 8s cycle, 2s per frame */
+    @keyframes plane-f1 {
+      0%, 25%      { opacity: 1; }
+      25.01%, 100% { opacity: 0; }
+    }
+    @keyframes plane-f2 {
+      0%, 24.99%   { opacity: 0; }
+      25%, 50%     { opacity: 1; }
+      50.01%, 100% { opacity: 0; }
+    }
+    @keyframes plane-f3 {
+      0%, 49.99%   { opacity: 0; }
+      50%, 75%     { opacity: 1; }
+      75.01%, 100% { opacity: 0; }
+    }
+    @keyframes plane-f4 {
+      0%, 74.99%   { opacity: 0; }
+      75%, 100%    { opacity: 1; }
+    }
+    /*
+      Per-frame tilt to match direction of travel:
+        f1 (afs1) — 3° nose-up climb
+        f2 (afs2) — level
+        f3 (afs3) — 30° nose-down dive
+        f4 (afs4) — level recovery
+      scaleX(-1) on .plane-content.flip mirrors rotations for right→left planes automatically.
+    */
+    .pf.f1 { animation: plane-f1 8s linear infinite; transform: rotate(-3deg);  }
+    .pf.f2 { animation: plane-f2 8s linear infinite; transform: rotate(0deg);   }
+    .pf.f3 { animation: plane-f3 8s linear infinite; transform: rotate(30deg);  }
+    .pf.f4 { animation: plane-f4 8s linear infinite; transform: rotate(0deg);   }
+
+    /*
+      Crossing paths are smooth S-curves: rise gently (f1), level (f2),
+      dive steeply (f3), recover (f4). Multiple interpolation stops approximate
+      the smooth sine-wave shape using linear timing.
+    */
+
+    /* Plane 1 — left→right, 72px, opacity 0.32, cycle 42s, delay 12s */
+    #plane-1 { top: 55%; width: 72px; height: 72px; }
+    body.crawling #plane-1 { animation: p1-fly 42s linear infinite 12s; }
+    @keyframes p1-fly {
+      /* crossing ~14s (0-33% of 42s), wave period ~8s → ~1.75 full cycles */
+      0%    { transform: translateX(-77px) translateY(0);       opacity: 0;    }
+      1.5%  { transform: translateX(4vw)   translateY(-4vh);   opacity: 0.32; }
+      5%    { transform: translateX(12vw)  translateY(-10vh);  opacity: 0.32; } /* peak up */
+      8%    { transform: translateX(22vw)  translateY(-4vh);   opacity: 0.32; }
+      10%   { transform: translateX(28vw)  translateY(0);      opacity: 0.32; } /* zero cross */
+      12%   { transform: translateX(34vw)  translateY(5vh);    opacity: 0.32; }
+      14%   { transform: translateX(40vw)  translateY(10vh);   opacity: 0.32; } /* peak down */
+      16%   { transform: translateX(46vw)  translateY(5vh);    opacity: 0.32; }
+      19%   { transform: translateX(53vw)  translateY(0);      opacity: 0.32; } /* zero cross */
+      21%   { transform: translateX(59vw)  translateY(-5vh);   opacity: 0.32; }
+      24%   { transform: translateX(67vw)  translateY(-10vh);  opacity: 0.32; } /* peak up */
+      27%   { transform: translateX(76vw)  translateY(-5vh);   opacity: 0.32; }
+      29%   { transform: translateX(82vw)  translateY(0);      opacity: 0.32; } /* zero cross */
+      31%   { transform: translateX(88vw)  translateY(4vh);    opacity: 0.32; }
+      32%   {                                                    opacity: 0.32; }
+      33%   { transform: translateX(calc(100vw + 77px)) translateY(1vh); opacity: 0; }
+      33.1% { transform: translateX(-77px) translateY(0);       opacity: 0;    }
+      100%  { transform: translateX(-77px) translateY(0);       opacity: 0;    }
+    }
+
+    /* Plane 2 — right→left, 62px, opacity 0.22, cycle 58s, delay 28s */
+    #plane-2 { top: 12%; width: 62px; height: 62px; }
+    body.crawling #plane-2 { animation: p2-fly 58s linear infinite 28s; }
+    @keyframes p2-fly {
+      /* crossing ~22s (0-38% of 58s), wave period ~8s → ~2.75 full cycles */
+      0%    { transform: translateX(calc(100vw + 67px)) translateY(0);      opacity: 0;    }
+      1.5%  { transform: translateX(93vw)  translateY(-4vh);   opacity: 0.22; }
+      3%    { transform: translateX(87vw)  translateY(-10vh);  opacity: 0.22; } /* peak up */
+      5%    { transform: translateX(81vw)  translateY(-4vh);   opacity: 0.22; }
+      7%    { transform: translateX(74vw)  translateY(0);      opacity: 0.22; } /* zero cross */
+      9%    { transform: translateX(67vw)  translateY(5vh);    opacity: 0.22; }
+      10%   { transform: translateX(63vw)  translateY(10vh);   opacity: 0.22; } /* peak down */
+      12%   { transform: translateX(57vw)  translateY(5vh);    opacity: 0.22; }
+      14%   { transform: translateX(50vw)  translateY(0);      opacity: 0.22; } /* zero cross */
+      16%   { transform: translateX(44vw)  translateY(-5vh);   opacity: 0.22; }
+      17%   { transform: translateX(40vw)  translateY(-10vh);  opacity: 0.22; } /* peak up */
+      19%   { transform: translateX(34vw)  translateY(-5vh);   opacity: 0.22; }
+      21%   { transform: translateX(27vw)  translateY(0);      opacity: 0.22; } /* zero cross */
+      23%   { transform: translateX(21vw)  translateY(5vh);    opacity: 0.22; }
+      24%   { transform: translateX(17vw)  translateY(10vh);   opacity: 0.22; } /* peak down */
+      26%   { transform: translateX(11vw)  translateY(5vh);    opacity: 0.22; }
+      28%   { transform: translateX(5vw)   translateY(0);      opacity: 0.22; } /* zero cross */
+      31%   { transform: translateX(0vw)   translateY(-6vh);   opacity: 0.22; }
+      36%   {                                                    opacity: 0.22; }
+      38%   { transform: translateX(-67px) translateY(-1vh);   opacity: 0;    }
+      38.1% { transform: translateX(calc(100vw + 67px)) translateY(0); opacity: 0; }
+      100%  { transform: translateX(calc(100vw + 67px)) translateY(0); opacity: 0; }
+    }
+
+    /* ───── SKY DIM OVERLAY ───── */
+    /* Sits inside .sky-fs as first child — dims sky+clouds together.
+       Fades in with the sky on arrow click, then slowly lifts during the crawl. */
+    #sky-dim {
+      position: absolute;
+      inset: 0;
+      background: #080E30;
+      opacity: 0;
+      pointer-events: none;
+      /* no transition by default — controlled by body classes below */
+    }
+
+    /* Fade in alongside the sky when you pass through the door */
+    body.inside #sky-dim {
+      opacity: 0.7;
+      transition: opacity 0.9s ease;
+    }
+
+    /* Once the crawl rolls, animate from 70% → 0% over 60 s
+       (reaching full brightness at 75 % of the 80 s story) */
+    body.crawling #sky-dim {
+      animation: dim-lift 60s linear forwards;
+    }
+
+    @keyframes dim-lift {
+      from { opacity: 0.7; }
+      to   { opacity: 0.10; }
+    }
+
+    @keyframes door-enter {
+      0% {
+        transform: translateZ(-8000px) translateY(-55px);
+        opacity: 0;
+        filter: blur(5px);
+      }
+      8% {
+        transform: translateZ(-7600px) translateY(-52px);
+        opacity: 0.04;
+        filter: blur(4px);
+      }
+      25% {
+        transform: translateZ(-6200px) translateY(-38px);
+        opacity: 0.18;
+        filter: blur(2.5px);
+      }
+      50% {
+        transform: translateZ(-3800px) translateY(-22px);
+        opacity: 0.48;
+        filter: blur(1px);
+      }
+      72% {
+        transform: translateZ(-1600px) translateY(-9px);
+        opacity: 0.82;
+        filter: blur(0px);
+      }
+      88% {
+        transform: translateZ(-280px) translateY(-2px);
+        opacity: 1;
+      }
+      95% {
+        transform: translateZ(14px) translateY(0px);
+        opacity: 1;
+      }
+      100% {
+        transform: translateZ(0px) translateY(0px);
+        opacity: 1;
+        filter: blur(0px);
+      }
+    }
+
+    @keyframes knob-glow {
+      0%, 100% {
+        box-shadow:
+          1px 2px 5px rgba(0,0,0,0.55),
+          0 0 0 1.5px rgba(190,140,35,0.35),
+          0 0  10px  4px rgba(255, 210, 80, 0.70),
+          0 0  26px  9px rgba(255, 180, 50, 0.38),
+          0 0  55px 20px rgba(255, 155, 30, 0.18);
+      }
+      50% {
+        box-shadow:
+          1px 2px 5px rgba(0,0,0,0.55),
+          0 0 0 1.5px rgba(210,160,45,0.55),
+          0 0  18px  7px rgba(255, 225, 90, 0.90),
+          0 0  44px 16px rgba(255, 190, 60, 0.52),
+          0 0  85px 32px rgba(255, 165, 38, 0.28);
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="scene">
+    <div class="casing">
+
+      <!-- Top architrave -->
+      <div class="casing-top"></div>
+
+      <!-- Sides + door -->
+      <div class="casing-sides">
+        <div class="casing-side left"></div>
+
+        <div class="door-area">
+
+          <!-- Sky revealed when door opens -->
+          <div class="sky-scene">
+            <div class="sky-sun"></div>
+
+            <div class="cloud cloud-1">
+              <span class="puff p1"></span>
+              <span class="puff p2"></span>
+              <span class="puff p3"></span>
+              <span class="puff p4"></span>
+              <span class="puff p5"></span>
+            </div>
+
+            <div class="cloud cloud-2">
+              <span class="puff p1"></span>
+              <span class="puff p2"></span>
+              <span class="puff p3"></span>
+              <span class="puff p4"></span>
+            </div>
+
+            <div class="cloud cloud-3">
+              <span class="puff p1"></span>
+              <span class="puff p2"></span>
+              <span class="puff p3"></span>
+              <span class="puff p4"></span>
+            </div>
+
+            <!-- Enter arrow — appears after door opens -->
+            <div class="enter-arrow" id="enterArrow">
+              <svg viewBox="0 0 52 90" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                  <!-- Front face gradient: bright at tip, cool at base -->
+                  <radialGradient id="af" cx="38%" cy="14%" r="78%" gradientUnits="objectBoundingBox">
+                    <stop offset="0%"   stop-color="rgba(255,255,255,1)"/>
+                    <stop offset="45%"  stop-color="rgba(224,238,255,0.94)"/>
+                    <stop offset="100%" stop-color="rgba(185,212,252,0.80)"/>
+                  </radialGradient>
+                </defs>
+
+                <!-- ── Right extrusion side (6px offset) ── -->
+                <!-- Head right wing -->
+                <polygon points="49,36 55,42 41,42 41,36" fill="rgba(138,182,232,0.68)"/>
+                <!-- Stem right side -->
+                <polygon points="37,36 41,36 41,42 37,88 31,88 31,42" fill="rgba(128,172,226,0.55)"/>
+
+                <!-- ── Underside of arrowhead overhang ── -->
+                <polygon points="3,36 49,36 41,42 11,42" fill="rgba(118,162,220,0.50)"/>
+
+                <!-- ── Front face (narrow head, slender stem) ── -->
+                <polygon
+                  points="26,3 49,36 37,36 37,87 15,87 15,36 3,36"
+                  fill="url(#af)"/>
+
+                <!-- Left-edge highlight on arrowhead (lit face) -->
+                <polygon points="26,3 3,36 10,36 26,12" fill="rgba(255,255,255,0.35)"/>
+                <!-- Top lip of stem -->
+                <rect x="16" y="36" width="21" height="3.5" rx="1" fill="rgba(255,255,255,0.42)"/>
+              </svg>
+            </div>
+          </div>
+
+          <!-- The door (swings open on knob click) -->
+          <div class="door">
+            <!-- Recessed panels -->
+            <div class="panels">
+              <div class="panel"></div>
+              <div class="panel"></div>
+              <div class="panel"></div>
+              <div class="panel"></div>
+            </div>
+
+            <!-- Hinges -->
+            <div class="hinge hinge-top"></div>
+            <div class="hinge hinge-bottom"></div>
+
+            <!-- Hardware -->
+            <div class="escutcheon"></div>
+            <div class="knob"></div>
+
+            <!-- Ghost text -->
+            <div class="open-me">open me?</div>
+
+            <!-- 3D door edge (thickness visible when door swings open) -->
+            <div class="door-edge"></div>
+          </div>
+
+        </div>
+
+        <div class="casing-side right"></div>
+      </div>
+
+    </div>
+
+    <!-- Floor shadow -->
+    <div class="floor-shadow"></div>
+  </div>
+  <!-- Fullscreen sky — revealed on arrow click -->
+  <div class="sky-fs" id="skyFs">
+    <!-- Dark tint: 70% on entry, lifts to 0% over the crawl -->
+    <div id="sky-dim"></div>
+    <div class="sky-fs-sun"></div>
+
+    <!-- Left → Right clouds -->
+    <div class="fc lr lg" style="top:5%;  --spd:50s; --del:-9s" ><span class="p a"></span><span class="p b"></span><span class="p c"></span><span class="p d"></span></div>
+    <div class="fc lr cu" style="top:19%; --spd:31s; --del:-20s"><span class="p a"></span><span class="p b"></span><span class="p c"></span><span class="p d"></span></div>
+    <div class="fc lr fs" style="top:38%; --spd:44s; --del:-4s" ><span class="p a"></span><span class="p b"></span><span class="p c"></span><span class="p d"></span></div>
+    <div class="fc lr sm" style="top:58%; --spd:36s; --del:-27s"><span class="p a"></span><span class="p b"></span><span class="p c"></span><span class="p d"></span></div>
+    <div class="fc lr fs" style="top:76%; --spd:60s; --del:-14s"><span class="p a"></span><span class="p b"></span><span class="p c"></span><span class="p d"></span></div>
+
+    <!-- Right → Left clouds -->
+    <div class="fc rl fs" style="top:12%; --spd:48s; --del:-22s"><span class="p a"></span><span class="p b"></span><span class="p c"></span><span class="p d"></span></div>
+    <div class="fc rl cu" style="top:29%; --spd:62s; --del:-7s" ><span class="p a"></span><span class="p b"></span><span class="p c"></span><span class="p d"></span></div>
+    <div class="fc rl sm" style="top:48%; --spd:28s; --del:-33s"><span class="p a"></span><span class="p b"></span><span class="p c"></span><span class="p d"></span></div>
+    <div class="fc rl md" style="top:67%; --spd:40s; --del:-11s"><span class="p a"></span><span class="p b"></span><span class="p c"></span><span class="p d"></span></div>
+    <div class="fc rl lg" style="top:84%; --spd:54s; --del:-6s" ><span class="p a"></span><span class="p b"></span><span class="p c"></span><span class="p d"></span></div>
+
+    <div class="welcome-text" id="welcomeText">Welcome. Here's our story...</div>
+  </div>
+
+  <!-- Sky creatures — above sky-fs, below crawl text -->
+  <div id="sky-creatures">
+
+    <!-- Bird frame symbols defined once, referenced by all 4 bird instances -->
+    <svg style="display:none" aria-hidden="true">
+      <defs>
+        <symbol id="bfs1" viewBox="0 0 164 164">
+          <path d="M111.076 94.5536C126.136 86.3636 143.176 94.5436 158.856 88.5636C160.356 87.9936 162.536 87.3536 163.446 89.3036C164.556 91.7036 162.436 92.8536 160.726 93.9336C150.666 100.344 139.416 104.114 127.996 106.594C114.506 109.524 101.786 113.474 89.5955 120.334C81.5655 124.854 71.9855 125.964 65.4855 134.064C62.2255 138.134 46.2855 131.624 44.4755 126.424C43.2455 122.874 46.1955 122.624 48.1355 121.944C53.8655 119.934 59.5055 117.804 63.9455 113.464C66.9755 110.514 68.9056 107.734 63.2456 105.124C42.9456 95.7536 29.3855 78.2936 14.1555 63.0336C6.08554 54.9536 3.39554 43.4036 0.225542 32.5536C-0.234458 30.9736 -0.134466 28.9636 1.90553 28.1736C3.49553 27.5636 4.66553 28.6736 5.58553 29.7536C17.7355 44.0736 34.4955 51.1836 50.9255 58.7936C55.2855 60.8136 58.3755 64.0436 61.0355 67.8836C65.1555 73.8436 69.9755 79.1536 76.0955 83.1336C82.3955 87.2336 88.6755 88.7736 94.9655 82.9536C96.1955 81.8136 97.8155 80.9336 99.4055 80.3636C105.446 78.1836 110.526 81.0736 114.156 85.0336C117.976 89.2036 108.886 88.5436 111.086 94.5336L111.076 94.5536ZM9.03554 40.2336C10.4855 44.8836 14.6755 47.7436 14.1855 53.3236C13.8755 56.9036 23.9255 56.3436 19.4255 63.1636C24.2755 66.2336 27.7355 71.4836 32.3255 74.0736C38.7355 77.6936 41.4455 83.9136 46.3455 88.2436C54.5255 95.4736 62.4755 104.154 75.1655 102.594C70.9855 114.564 62.5455 121.984 49.8755 125.194C59.5755 132.844 61.3455 132.814 68.3555 125.194C70.3455 123.034 72.3755 120.804 75.3455 120.464C92.1455 118.554 100.146 107.564 104.306 92.6236C105.006 90.1036 108.896 87.7436 105.916 85.0436C102.736 82.1636 99.3655 84.3136 96.6355 86.5836C88.9355 92.9736 81.3055 91.6236 73.5955 86.6936C67.2055 82.6036 62.0055 77.2636 57.5755 71.1736C54.9855 67.6136 52.0055 64.6136 48.0055 62.7136C34.5055 56.2936 21.2756 49.4036 9.01555 40.2436L9.03554 40.2336ZM103.736 108.654C117.106 104.654 130.256 100.724 145.326 96.2236C134.226 93.7436 125.596 95.3636 116.746 96.5036C109.076 97.4836 104.436 99.8536 103.736 108.664V108.654Z" fill="white"/>
+        </symbol>
+        <symbol id="bfs2" viewBox="0 0 164 164">
+          <path d="M92.144 78.6411C94.374 69.6011 102.174 64.0812 103.594 55.3112C104.024 52.6412 105.344 49.4611 108.934 49.4211C112.204 49.3811 112.684 52.5211 113.864 54.7211C116.434 59.5211 119.064 64.3011 121.474 69.1911C122.604 71.4811 124.704 74.6812 123.924 76.3112C118.494 87.6512 127.884 90.8712 134.014 95.9612C135.284 97.0212 137.124 97.6111 137.544 101.351C125.354 100.991 121.394 111.471 115.014 119.221C108.034 127.701 98.934 132.611 88.004 132.191C77.024 131.771 67.684 134.581 59.514 141.891C56.764 144.351 53.104 147.361 49.714 143.711C45.324 138.981 39.894 134.321 40.294 126.981C40.484 123.571 44.044 124.041 46.504 123.801C54.894 122.951 62.974 121.111 70.134 116.451C73.214 114.451 76.2839 112.291 70.4139 109.481C66.7239 107.721 63.584 104.451 62.264 100.831C57.034 86.5212 45.074 76.7311 38.064 63.6711C31.534 51.5211 28.6539 38.3511 27.0939 24.8211C26.8339 22.6111 26.944 19.8211 29.684 19.1011C32.014 18.4811 33.104 20.8511 34.244 22.4111C43.754 35.4511 56.044 45.4011 70.114 52.8511C80.954 58.5911 87.844 66.9612 92.134 78.6212L92.144 78.6411ZM35.4739 47.1611C43.5639 52.6011 43.094 63.6411 50.764 69.2311C51.454 69.7411 53.5139 70.5311 52.0939 71.6111C45.8039 76.3711 53.344 76.2811 54.504 77.7311C56.684 80.4411 61.6839 81.3011 61.9139 85.2011C62.4839 95.2211 67.214 102.711 75.624 107.071C81.454 110.091 80.274 112.301 76.874 115.681C69.864 122.651 61.214 126.091 51.564 127.461C49.534 127.751 45.944 126.821 46.124 129.981C46.324 133.721 49.194 136.731 51.764 139.411C54.514 142.261 56.444 139.161 58.304 137.791C63.134 134.241 67.314 128.481 73.564 128.671C95.144 129.331 111.194 120.561 122.424 102.391C122.714 101.931 123.374 101.711 123.724 101.281C125.004 99.7212 128.514 99.1012 126.464 96.0612C124.994 93.8812 122.734 92.0912 119.924 92.6812C117.154 93.2712 114.464 94.4212 111.874 95.6112C103.814 99.3212 97.144 97.4112 92.324 90.2712C89.294 85.7812 87.054 80.7311 84.704 75.8211C82.724 71.7011 81.784 66.9212 77.814 64.0912C63.284 53.7312 47.064 45.7211 34.654 32.3211C35.764 38.9511 40.314 43.4111 43.654 48.9511C40.084 49.9511 38.794 46.5911 35.484 47.1611H35.4739ZM108.884 56.3412C104.374 59.6612 107.694 65.3211 103.674 68.2911C98.704 71.9511 98.044 78.1311 96.294 83.4111C94.454 88.9611 98.8839 93.5511 104.784 93.3511C114.644 93.0111 122.244 80.8512 117.874 72.0212C115.344 66.9112 112.204 62.1011 108.874 56.3611L108.884 56.3412Z" fill="white"/>
+        </symbol>
+        <symbol id="bfs3" viewBox="0 0 164 164">
+          <path d="M97.8418 68.1049C118.583 72.0864 131.814 90.6569 152.453 94.6385C153.945 94.9265 156.332 95.2661 155.962 97.7044C155.653 99.7621 153.523 100.153 151.898 100.554C141.64 103.065 131.187 102.056 121.073 100.503C102.688 97.6735 85.4545 90.8215 69.2502 81.7163C65.0833 79.3809 62.0276 80.8521 58.4884 82.3645C44.743 88.2494 33.9709 98.7435 21.3058 106.275C17.3035 108.651 12.9309 114.588 8.31139 110.729C4.31946 107.396 10.6778 103.095 11.0688 98.8978C11.3363 96.048 12.9309 93.7845 14.752 91.9841C34.2281 72.8375 53.8997 54.4317 83.5203 52.1168C94.0557 51.2937 100.928 54.8329 107.472 62.3537C105.033 65.9752 99.8481 62.5697 97.8315 68.1152L97.8418 68.1049ZM67.4188 74.0515C77.0076 75.2552 83.9421 72.3951 89.7345 66.9114C92.2758 64.5039 98.2843 63.4442 96.4426 59.1437C94.673 55.0078 89.2407 56.4688 85.1356 56.6848C66.7089 57.6622 50.8337 64.6274 37.4381 77.1792C33.4256 80.9344 26.4088 82.4879 25.7401 88.5169C25.2051 93.3627 22.3655 95.5336 19.639 98.3217C17.7974 100.215 15.287 101.635 14.7726 106.984C33.5697 89.7309 55.4224 80.4714 71.8428 63.3825C72.3572 64.041 72.882 64.6994 73.3964 65.3579C71.6268 67.93 69.8572 70.502 67.3982 74.0618L67.4188 74.0515ZM140.601 96.0274C124.695 89.0313 113.717 76.6133 97.7595 72.8169C95.2594 72.2202 92.9754 70.6872 90.3621 72.9609C85.3928 77.282 79.1271 78.9282 70.958 80.7184C94.5392 86.9325 114.314 100.297 140.611 96.0377L140.601 96.0274Z" fill="white"/>
+        </symbol>
+        <symbol id="bfs4" viewBox="0 0 164 164">
+          <path d="M107.655 34.8663C98.765 36.3766 93.2759 41.5458 88.6259 48.219C86.8719 50.7404 87.1873 52.0611 89.6858 53.1986C98.1656 57.0723 104.185 63.8908 110.557 70.3618C119.031 78.9813 128.602 86.0905 140.116 90.2423C141.271 90.6594 143.025 90.7605 143 92.2266C142.968 93.9833 141.082 94.1476 139.738 94.5078C138.343 94.887 136.867 95.361 135.466 95.2598C122.879 94.3815 110.248 96.6248 97.5978 92.5552C92.462 90.9058 87.3893 89.6799 83.0737 86.476C79.9253 84.1379 78.7139 84.5233 77.8054 88.4603C74.3289 103.563 72.0513 118.768 72.4866 134.319C72.5434 136.285 73.7485 139.293 70.903 139.931C68.6316 140.443 66.6883 138.004 66.2277 136.076C64.3665 128.221 58.0887 122.976 55.382 115.109C50.3913 100.606 46 86.337 45.2303 71.0253C45.0915 68.2575 43.8864 67.9099 41.7917 69.0727C39.9052 70.128 37.9682 71.177 36.3026 72.542C33.64 74.7221 31.2425 77.2246 28.6178 79.4616C26.3212 81.4206 23.4126 84.5486 20.7437 82.0272C18.4598 79.8724 22.0561 77.3699 23.2359 75.076C30.5485 60.8197 43.8675 51.9094 54.404 40.5853C63.2813 31.0494 76.7391 29.1979 88.7079 25.223C90.2537 24.7112 92.3989 25.1535 94.0014 25.8107C98.9984 27.8771 102.645 32.0352 107.642 34.8473L107.655 34.8663ZM74.3542 43.4605C74.6128 44.5601 74.7769 45.2299 74.9283 45.8998C75.5403 48.6803 74.8968 52.8953 77.5782 53.6725C80.1651 54.4182 82.2156 50.7972 84.1336 48.6424C87.7426 44.598 90.4682 39.7574 95.1434 36.661C96.5693 35.7131 99.3139 35.2391 98.9795 33.4002C98.5631 31.1063 96.0457 29.8867 93.8942 28.9072C92.014 28.0541 89.8373 27.9846 88.0265 28.6039C74.3542 33.3054 60.1266 36.9833 50.2651 48.9015C46.5678 53.3692 42.7444 57.8243 37.8736 61.0977C32.4034 64.7755 29.3055 70.128 26.7944 76.0681C28.7187 74.7979 30.4664 73.3445 31.9933 71.6825C35.2867 68.0995 39.3121 65.6855 43.899 64.3585C46.3029 63.6633 48.8518 62.8671 48.1515 67.6635C47.4827 72.226 48.3534 77.0223 48.5994 81.7113C48.6373 82.3938 48.9591 83.6576 49.1421 83.6576C54.0571 83.5944 51.2999 86.8741 51.2935 88.7573C51.2872 91.0259 50.2273 93.383 52.1958 95.5C53.9435 94.4004 53.4955 91.5694 55.9183 91.0196C56.1139 96.5363 52.6816 101.889 55.3441 107.728C57.0098 105.813 56.8521 103.702 57.5713 101.92C58.2212 100.315 58.1076 98.1225 60.6377 97.1304C59.6597 105.655 56.5429 113.782 60.6566 122.509C61.7734 120.821 62.5052 119.709 63.521 118.18C65.294 123.716 64.9596 129.422 69.1868 134.465C69.2941 132.417 69.4266 131.229 69.414 130.048C69.2626 116.17 70.6254 102.375 74.1397 89.0164C77.3133 76.9528 79.2376 65.3885 73.4835 53.5714C72.0449 50.614 71.7295 46.9488 74.3478 43.4605H74.3542ZM134.129 91.8032C123.573 86.3117 115.043 80.3084 107.876 72.6747C101.894 66.3048 95.5662 60.4721 88.1653 55.7705C86.0264 54.4182 84.5942 53.1228 82.2219 55.4103C80.2913 57.2745 77.6603 58.2224 79.5657 61.8686C82.1083 66.7282 82.0263 71.9732 80.5752 77.2309C80.102 78.9371 79.5278 80.8518 81.6414 82.0525C85.0359 83.9799 87.8688 86.8868 91.85 88.3023C92.7207 86.7351 90.5944 85.1363 92.0771 83.7018C96.3738 86.5582 99.3265 91.2597 104.822 91.4367C105.775 89.7431 103.238 88.871 104.551 86.9563C109.131 88.732 113.018 92.9343 118.955 92.4667C117.775 90.2234 115.1 89.7178 114.582 86.9942C120.759 88.2517 125.983 92.6626 134.129 91.7969V91.8032Z" fill="white"/>
+        </symbol>
+        <symbol id="afs1" viewBox="0 0 375 375">
+          <path d="M373.43 9.05591C372.422 7.91921 370.892 7.41337 369.417 7.71216L369.123 7.78345L7.34082 108.011C6.00497 108.381 4.93407 109.38 4.47266 110.686C4.01014 111.992 4.21534 113.442 5.02148 114.569L80.7783 220.519L80.8418 220.608L80.8623 220.714L102.481 331.075C102.823 332.816 104.205 334.149 105.929 334.444L106.277 334.489C108.166 334.652 109.927 333.549 110.607 331.783L134.917 268.579L135.229 267.769L135.773 268.447L219.69 372.914C220.503 373.925 221.724 374.499 222.997 374.499L223.3 374.488C223.401 374.48 223.503 374.47 223.605 374.455H223.604C225.09 374.241 226.352 373.256 226.923 371.868L374.182 13.4856C374.798 11.9867 374.506 10.2687 373.43 9.05591ZM362.649 19.22L222.127 361.211L221.805 361.994L221.274 361.334L137.225 256.701C136.332 255.591 134.945 255.008 133.542 255.132L133.262 255.166C131.762 255.401 130.5 256.419 129.955 257.836L108.601 313.358L107.977 314.979L107.644 313.275L88.9941 218.073V218.073C88.8774 217.477 88.6343 216.913 88.2822 216.42L15.8721 115.151L15.4561 114.569L16.1455 114.378L362.054 18.5481L363.038 18.2756L362.649 19.22Z" fill="white" stroke="white"/>
+          <path d="M373.452 9.08093C372.008 7.42729 369.543 7.14926 367.765 8.43835L82.3376 215.452C80.4407 216.828 80.0174 219.483 81.3943 221.38H81.3953C82.7271 223.218 85.258 223.673 87.1404 222.448L87.321 222.324L330.419 46.0087L331.074 46.7587L130.847 256.429C129.228 258.124 129.29 260.81 130.985 262.428C131.807 263.213 132.862 263.602 133.915 263.602C135.035 263.602 136.15 263.163 136.984 262.29L373.325 14.8046C374.841 13.2176 374.896 10.735 373.452 9.08093Z" fill="white" stroke="white"/>
+          <path d="M164.023 290.076C162.677 288.157 160.031 287.691 158.112 289.035L104.212 326.785C102.292 328.13 101.826 330.775 103.17 332.694C103.995 333.871 105.311 334.504 106.651 334.504C107.491 334.503 108.34 334.256 109.08 333.736V333.735L162.981 295.986C164.841 294.683 165.336 292.159 164.143 290.257L164.023 290.076Z" fill="white" stroke="white"/>
+        </symbol>
+        <symbol id="afs2" viewBox="0 0 375 375">
+          <path d="M366.267 171.231C282.884 136.632 198.437 104.565 114.646 71.1334C91.8906 62.0681 69.2444 52.8355 46.653 43.5193C40.6433 41.0127 43.6768 31.2824 49.7702 33.8439C133.154 68.443 217.6 100.51 301.391 133.941C324.147 143.007 346.793 152.239 369.384 161.555C375.394 164.062 372.361 173.792 366.267 171.231Z" fill="white"/>
+          <path d="M370.176 170.924C307.199 205.678 244.418 240.68 181.553 275.627C164.649 284.989 147.69 294.436 130.703 303.744C124.93 306.894 120.368 297.803 126.141 294.653C189.118 259.899 251.899 224.897 314.764 189.95C331.668 180.587 348.627 171.141 365.615 161.833C371.388 158.683 375.949 167.774 370.176 170.924Z" fill="white"/>
+          <path d="M123.41 300.277C110.37 259.076 102.312 216.478 89.189 175.223C87.1731 168.997 97.226 166.981 99.1583 173.151C112.198 214.352 120.256 256.949 133.379 298.205C135.395 304.43 125.342 306.447 123.41 300.277Z" fill="white"/>
+          <path d="M54.1704 110.278C49.2527 86.9613 48.2409 62.9776 43.3232 39.6609C41.916 33.2368 51.9689 31.2198 53.2925 37.5891C58.2102 60.9057 59.2222 84.8897 64.1398 108.206C65.5471 114.631 55.494 116.647 54.1704 110.278Z" fill="white"/>
+          <path d="M368.903 171.405C327.137 179.291 283.48 179.119 241.1 179.187C200.439 179.187 159.742 177.967 119.177 175.996C110.853 175.56 102.474 175.206 94.1214 174.631C87.5453 174.264 88.0782 163.97 94.6831 164.476C117.881 165.938 141.186 166.873 164.518 167.585C210.182 169.073 255.895 169.757 301.507 167.861C323.411 166.921 345.367 165.536 366.915 161.491C373.368 160.222 375.524 170.246 368.987 171.46L368.903 171.405Z" fill="white"/>
+          <path d="M57.3101 103.487C137.321 117.337 216.502 135.188 296.165 150.844C317.331 155.039 338.607 159.068 359.964 162.791C366.407 163.907 365.929 174.118 359.402 172.946C279.391 159.096 200.211 141.246 120.547 125.59C99.3808 121.394 78.1049 117.366 56.7481 113.643C50.3051 112.526 50.7834 102.316 57.3101 103.487Z" fill="white"/>
+          <path d="M97.7449 173.3C72.9685 201.777 43.4988 225.74 18.6388 254.161C14.3213 259.103 7.66234 251.387 11.925 246.529C36.7013 218.052 66.1712 194.09 91.0312 165.668C95.3487 160.726 102.007 168.442 97.7449 173.3Z" fill="white"/>
+          <path d="M61.9358 110.109C44.1971 156.117 30.2967 203.567 20.2032 251.958C18.8646 258.375 9.10544 255.203 10.5277 248.841C20.5664 200.533 34.5504 153.139 52.2603 106.992C54.5997 100.873 64.2752 103.99 61.9358 110.109Z" fill="white"/>
+          <path d="M102.465 229.375C73.4053 234.113 43.1285 239.25 17.646 254.945C-7.83639 270.641 7.50746 249.252 13.0846 245.854C39.2018 229.738 70.5026 224.317 100.393 219.405C106.82 218.358 108.975 228.383 102.465 229.375Z" fill="white"/>
+        </symbol>
+        <symbol id="afs3" viewBox="0 0 375 375">
+          <path d="M361.676 343.179C307.826 259.963 252.029 178.232 197.349 95.7552C182.493 73.3679 167.798 50.908 153.184 28.4117C149.308 22.403 155.928 16.0207 159.849 22.1301C213.699 105.346 269.497 187.076 324.177 269.553C339.033 291.941 353.727 314.401 368.342 336.897C372.217 342.906 365.597 349.288 361.676 343.179Z" fill="white"/>
+          <path d="M364.122 346.874C291.083 345.111 218.153 343.703 145.16 342.195C125.543 341.755 105.846 341.367 86.1656 340.825C79.482 340.628 78.0243 329.095 84.708 329.292C157.747 331.055 230.677 332.462 303.671 333.971C323.287 334.41 342.985 334.799 362.665 335.34C369.348 335.537 370.806 347.071 364.122 346.874Z" fill="white"/>
+          <path d="M74.2361 331.604C85.3122 288.835 100.852 248.529 111.893 205.655C113.532 199.159 122.132 204.778 120.457 211.169C109.381 253.938 93.8419 294.244 82.801 337.118C81.1618 343.613 72.5617 337.995 74.2361 331.604Z" fill="white"/>
+          <path d="M114.651 140.485C124.593 101.635 139.623 67.2346 149.565 28.3848C152.243 17.6092 165.542 28.647 162.803 39.2322C152.861 78.082 137.83 112.483 127.888 151.333C125.211 162.109 111.911 151.07 114.651 140.485Z" fill="white"/>
+          <path d="M363.347 346.388C323.307 331.578 284.016 308.476 245.803 286.263C209.16 264.891 172.855 242.395 136.899 219.29C129.53 214.519 122.087 209.795 114.734 204.884C108.92 201.096 112.534 192.051 118.332 195.98C138.793 209.498 159.511 222.594 180.32 235.502C221.019 260.852 262.007 285.498 303.689 307.754C323.715 318.415 343.923 328.701 364.573 336.363C370.775 338.605 369.666 348.818 363.406 346.482L363.347 346.388Z" fill="white"/>
+          <path d="M122.78 147.923C185.657 195.739 246.544 246.558 308.546 295.741C325.007 308.839 341.616 321.846 358.391 334.631C363.454 338.482 359.752 346.889 354.636 342.953C291.759 295.138 230.872 244.319 168.87 195.136C152.408 182.037 135.8 169.031 119.025 156.246C113.962 152.394 117.664 143.988 122.78 147.923Z" fill="white"/>
+          <path d="M118.405 205.583C87.4083 218.354 53.5557 224.571 22.5001 237.248C17.105 239.455 13.4529 228.966 18.7732 226.806C49.7701 214.035 83.6228 207.819 114.678 195.141C120.074 192.934 123.725 203.423 118.405 205.583Z" fill="white"/>
+          <path d="M121.465 148.355C85.3225 173.648 51.4314 202.827 20.0111 235.459C15.8445 239.786 9.88001 230.312 14.0843 226.089C45.4214 193.487 79.3501 164.412 115.538 138.984C120.33 135.606 126.257 144.976 121.465 148.355Z" fill="white"/>
+          <path d="M98.3523 243.602C73.1689 237.449 46.852 231.197 20.2195 235.048C-6.41292 238.899 14.3291 227.015 20.1432 226.202C47.4508 222.231 74.7017 228.605 100.62 234.905C106.189 236.267 103.967 245.037 98.3523 243.602Z" fill="white"/>
+        </symbol>
+        <symbol id="afs4" viewBox="0 0 375 375">
+          <path d="M364.901 114.017C271.674 108.437 178.265 105.691 85.0349 101.39C59.7203 100.236 34.4562 98.881 9.21749 97.4256C2.4939 97.0108 2.16368 86.4718 8.98758 86.912C102.215 92.4923 195.624 95.2376 288.854 99.5383C314.168 100.693 339.432 102.048 364.671 103.503C371.395 103.918 371.725 114.457 364.901 114.017Z" fill="white"/>
+          <path d="M368.618 112.393C318.827 167.695 269.312 223.173 219.697 278.626C206.344 293.503 192.966 308.481 179.512 323.333C174.936 328.368 167.398 321.026 171.975 315.992C221.765 260.69 271.28 205.212 320.895 149.759C334.248 134.881 347.627 119.903 361.08 105.051C365.657 100.017 373.194 107.359 368.618 112.393Z" fill="white"/>
+          <path d="M171.209 322.414C144.508 286.556 122.205 247.645 95.4035 211.762C91.3244 206.359 100.468 200.982 104.447 206.36C131.148 242.218 153.451 281.129 180.253 317.012C184.332 322.415 175.188 327.791 171.209 322.414Z" fill="white"/>
+          <path d="M39.1768 160.137C26.4726 139.01 17.3605 115.908 4.65636 94.7814C1.10498 88.9783 10.2488 83.6018 13.6999 89.3796C26.4041 110.507 35.5163 133.609 48.2205 154.736C51.7719 160.539 42.6278 165.915 39.1768 160.137Z" fill="white"/>
+          <path d="M367.536 113.295C329.38 135.148 286.645 149.766 245.241 164.187C205.495 177.958 165.299 190.549 124.979 202.362C116.694 204.754 108.384 207.246 100.024 209.513C93.4718 211.382 90.5063 201.139 97.1338 199.395C120.306 192.968 143.404 185.989 166.451 178.783C211.593 164.772 256.511 149.957 300.455 132.657C321.548 124.318 342.541 115.528 362.235 104.276C368.113 100.851 373.615 109.919 367.637 113.32L367.536 113.295Z" fill="white"/>
+          <path d="M39.9449 152.436C122.848 138.876 206.294 129.508 289.469 117.831C311.581 114.763 333.743 111.496 355.88 107.901C362.557 106.811 365.547 116.954 358.771 118.019C275.868 131.579 192.421 140.947 109.246 152.624C87.1347 155.692 64.9726 158.959 42.8351 162.553C36.1587 163.644 33.1681 153.501 39.9449 152.436Z" fill="white"/>
+          <path d="M103.116 206.985C88.5408 243.212 67.8495 276.618 53.1744 312.82C50.6277 319.113 41.505 313.825 44.0264 307.633C58.6013 271.405 79.2928 238 93.9679 201.798C96.5146 195.505 105.637 200.792 103.116 206.985Z" fill="white"/>
+          <path d="M46.7094 157.342C44.9518 208.324 47.4343 259.414 53.9573 310.136C54.8221 316.863 44.208 317.067 43.4436 310.366C36.8953 259.745 34.5131 208.68 36.1957 157.572C36.4099 150.798 46.9236 150.568 46.7094 157.342Z" fill="white"/>
+          <path d="M126.721 260.2C99.9197 274.674 72.0631 289.949 52.4694 313.923C32.8756 337.896 40.6305 311.791 44.9315 306.581C65.0032 281.981 93.7642 266.081 121.319 251.156C127.247 247.956 132.749 257.025 126.721 260.2Z" fill="white"/>
+        </symbol>
+      </defs>
+    </svg>
+
+    <!-- ── BIRD 1  right→left, slow ── -->
+    <div id="bird-1" class="bird">
+      <div class="bird-content flip">
+        <div class="bf f1"><svg viewBox="0 0 164 164" fill="none"><use href="#bfs1"/></svg></div>
+        <div class="bf f2"><svg viewBox="0 0 164 164" fill="none"><use href="#bfs2"/></svg></div>
+        <div class="bf f3"><svg viewBox="0 0 164 164" fill="none"><use href="#bfs3"/></svg></div>
+        <div class="bf f4"><svg viewBox="0 0 164 164" fill="none"><use href="#bfs4"/></svg></div>
+      </div>
+    </div>
+
+    <!-- ── BIRD 2  left→right, medium ── -->
+    <div id="bird-2" class="bird">
+      <div class="bird-content">
+        <div class="bf f1"><svg viewBox="0 0 164 164" fill="none"><use href="#bfs1"/></svg></div>
+        <div class="bf f2"><svg viewBox="0 0 164 164" fill="none"><use href="#bfs2"/></svg></div>
+        <div class="bf f3"><svg viewBox="0 0 164 164" fill="none"><use href="#bfs3"/></svg></div>
+        <div class="bf f4"><svg viewBox="0 0 164 164" fill="none"><use href="#bfs4"/></svg></div>
+      </div>
+    </div>
+
+
+    <!-- ── BIRD 4  left→right, slowest ── -->
+    <div id="bird-4" class="bird">
+      <div class="bird-content">
+        <div class="bf f1"><svg viewBox="0 0 164 164" fill="none"><use href="#bfs1"/></svg></div>
+        <div class="bf f2"><svg viewBox="0 0 164 164" fill="none"><use href="#bfs2"/></svg></div>
+        <div class="bf f3"><svg viewBox="0 0 164 164" fill="none"><use href="#bfs3"/></svg></div>
+        <div class="bf f4"><svg viewBox="0 0 164 164" fill="none"><use href="#bfs4"/></svg></div>
+      </div>
+    </div>
+
+    <!-- ── PLANE 1  left→right, 72px ── -->
+    <div id="plane-1" class="plane">
+      <div class="plane-content">
+        <div class="pf f1"><svg viewBox="0 0 375 375" fill="none"><use href="#afs1"/></svg></div>
+        <div class="pf f2"><svg viewBox="0 0 375 375" fill="none"><use href="#afs2"/></svg></div>
+        <div class="pf f3"><svg viewBox="0 0 375 375" fill="none"><use href="#afs3"/></svg></div>
+        <div class="pf f4"><svg viewBox="0 0 375 375" fill="none"><use href="#afs4"/></svg></div>
+      </div>
+    </div>
+
+    <!-- ── PLANE 2  right→left, 62px ── -->
+    <div id="plane-2" class="plane">
+      <div class="plane-content flip">
+        <div class="pf f1"><svg viewBox="0 0 375 375" fill="none"><use href="#afs1"/></svg></div>
+        <div class="pf f2"><svg viewBox="0 0 375 375" fill="none"><use href="#afs2"/></svg></div>
+        <div class="pf f3"><svg viewBox="0 0 375 375" fill="none"><use href="#afs3"/></svg></div>
+        <div class="pf f4"><svg viewBox="0 0 375 375" fill="none"><use href="#afs4"/></svg></div>
+      </div>
+    </div>
+
+
+  </div>
+
+  <!-- Crawl — shown after welcome text fades -->
+  <div id="crawlWrap">
+    <div id="crawlText">
+
+      <h2>THE ONE</h2>
+
+      <p>In the age before the oracles learned to speak, there were those who listened for what people could not yet say. Among them was The One, a shaper of thresholds, a cartographer of need, who came to his craft in the long years when the digital realm was young and its inhabitants still argued about whether the button should be blue.</p>
+
+      <p>He learned what all true craftsmen learn: that trust is not given. It is earned through ten thousand small decisions, most of them invisible, none of them celebrated.</p>
+
+      <p>A shadow has fallen across the Kingdom of Design. The oracles multiply in the deep places. They dream in data and speak in probability, and those who fear them say the age of human judgment is ending. That the great work will soon be done without hands, without doubt, without mercy.</p>
+
+      <p>But The One does not share this fear.</p>
+
+      <p>He has walked the great halls where millions pass daily and taught the oracles humility. He has built gates through which the ungifted suddenly became makers. In every kingdom he has served, the work was long, the credit was sparse, and the path forward was never marked in advance.</p>
+
+      <p>He does not believe the oracles are the enemy. He believes they are unfinished. And that the finishing is the great work of this age: to build not a world where machines replace human judgment, but one where they are worthy of standing beside it.</p>
+
+      <p>The One carries no map.</p>
+
+      <p>But he has seen, on the clearest days, what lies beyond the next threshold.</p>
+
+      <p>It looks something like this.</p>
+
+    </div>
+  </div>
+
+  <script>
+    const knob       = document.querySelector('.knob');
+    const door       = document.querySelector('.door');
+    const scene      = document.querySelector('.scene');
+    const arrow      = document.getElementById('enterArrow');
+    const skyFs      = document.getElementById('skyFs');
+    const welcomeEl  = document.getElementById('welcomeText');
+    const crawlWrap  = document.getElementById('crawlWrap');
+
+    let interacted = false;
+
+    // Step 1 — knob click opens the door
+    knob.addEventListener('click', () => {
+      if (interacted) return;
+      interacted = true;
+      door.classList.add('is-open');
+
+      // Show arrow once door finishes swinging
+      door.addEventListener('animationend', () => {
+        arrow.classList.add('visible');
+      }, { once: true });
+    });
+
+    // Step 2 — arrow click flies you through
+    arrow.addEventListener('click', () => {
+      arrow.style.pointerEvents = 'none';
+
+      // Start audio from within this direct user-gesture call stack (browser allows it here)
+      const bgAudio = document.getElementById('bg-audio');
+      bgAudio.volume = 0.5;
+      bgAudio.play().catch(() => {
+        // Autoplay still blocked — show the manual button
+        document.getElementById('audio-btn').style.opacity = '1';
+      });
+
+      // Rush the door scene toward viewer then off screen
+      scene.style.animation = 'scene-rush 1.35s cubic-bezier(0.4, 0, 1, 1) both';
+
+      // Sky fades in mid-rush; mark body as inside
+      setTimeout(() => {
+        skyFs.classList.add('active');
+        document.body.classList.add('inside');
+      }, 480);
+
+      // Welcome text appears once sky has settled
+      setTimeout(() => welcomeEl.classList.add('show'), 1850);
+    });
+
+    // Step 3 — after welcome text fades, roll the crawl
+    welcomeEl.addEventListener('animationend', () => {
+      crawlWrap.classList.add('active');
+      document.body.classList.add('crawling');
+    }, { once: true });
+
+    // Manual audio toggle (fallback button)
+    const audioBtn = document.getElementById('audio-btn');
+    const bgAudio  = document.getElementById('bg-audio');
+    audioBtn.addEventListener('click', () => {
+      if (bgAudio.paused) {
+        bgAudio.play();
+        audioBtn.textContent = '♫';
+      } else {
+        bgAudio.pause();
+        audioBtn.textContent = '♪';
+      }
+    });
+  </script>
+
+  <!-- Background audio -->
+  <audio id="bg-audio" src="audio.m4a" loop preload="auto" style="display:none;"></audio>
+
+  <!-- Subtle fallback audio toggle — shown only if autoplay is blocked -->
+  <button id="audio-btn" style="
+    position:fixed; bottom:18px; right:22px; z-index:9999;
+    background:rgba(255,255,255,0.12); border:1px solid rgba(255,255,255,0.25);
+    color:rgba(255,255,255,0.7); font-size:18px; width:36px; height:36px;
+    border-radius:50%; cursor:pointer; opacity:0; transition:opacity 0.6s;
+    pointer-events:auto; line-height:1;
+  ">♫</button>
+
+</body>
+</html>
