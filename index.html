@@ -1512,6 +1512,7 @@
     const skyFs      = document.getElementById('skyFs');
     const welcomeEl  = document.getElementById('welcomeText');
     const crawlWrap  = document.getElementById('crawlWrap');
+    const bgAudio    = document.getElementById('bg-audio');
 
     let interacted = false;
 
@@ -1532,7 +1533,6 @@
       arrow.style.pointerEvents = 'none';
 
       // Start audio from within this direct user-gesture call stack (browser allows it here)
-      const bgAudio = document.getElementById('bg-audio');
       bgAudio.volume = 0.5;
       bgAudio.play().catch(() => {});
       // Show the sound button a couple seconds after music starts
@@ -1561,7 +1561,6 @@
 
     // Sound toggle button
     const audioBtn = document.getElementById('audio-btn');
-    const bgAudio  = document.getElementById('bg-audio');
     const iconOn   = document.getElementById('icon-sound-on');
     const iconOff  = document.getElementById('icon-sound-off');
     let soundOn = true;
