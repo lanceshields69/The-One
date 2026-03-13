@@ -1508,6 +1508,7 @@
   <audio id="bg-audio" src="audio.m4a" loop preload="auto" style="display:none;"></audio>
 
   <script>
+  document.addEventListener('DOMContentLoaded', () => {
     const knob       = document.querySelector('.knob');
     const door       = document.querySelector('.door');
     const scene      = document.querySelector('.scene');
@@ -1583,6 +1584,7 @@
         setSoundState(true);
       }
     });
+  }); // end DOMContentLoaded
   </script>
 
   <!-- Sound toggle button — fades in when music starts -->
