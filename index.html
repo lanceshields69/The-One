@@ -1504,6 +1504,9 @@
     </div>
   </div>
 
+  <!-- Background audio (must be before the script so getElementById finds it) -->
+  <audio id="bg-audio" src="audio.m4a" loop preload="auto" style="display:none;"></audio>
+
   <script>
     const knob       = document.querySelector('.knob');
     const door       = document.querySelector('.door');
@@ -1581,9 +1584,6 @@
       }
     });
   </script>
-
-  <!-- Background audio -->
-  <audio id="bg-audio" src="audio.m4a" loop preload="auto" style="display:none;"></audio>
 
   <!-- Sound toggle button — fades in when music starts -->
   <button id="audio-btn" title="Toggle sound" style="
