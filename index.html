@@ -920,7 +920,7 @@
     }
     #end-links a {
       font-family: 'Cormorant Garamond', serif;
-      font-size: 1.35rem;
+      font-size: 1.68rem;
       font-style: italic;
       font-weight: 300;
       color: white;
@@ -954,8 +954,8 @@
       pointer-events: auto;
     }
     #built-modal {
-      background: rgba(255,255,255,0.91);
-      border-radius: 10px;
+      background: rgba(255,255,255,0.77);
+      border-radius: 0;
       box-shadow: 0 12px 48px rgba(0,0,0,0.22), 0 2px 12px rgba(0,0,0,0.12);
       max-width: 680px;
       width: 90%;
@@ -982,6 +982,13 @@
       color: #2a2a2a;
     }
     #built-modal p:last-child { margin-bottom: 0; }
+    #built-modal a {
+      color: #1c1c1c;
+      text-decoration: underline;
+      text-underline-offset: 3px;
+      opacity: 0.75;
+    }
+    #built-modal a:hover { opacity: 1; }
     #built-close {
       position: absolute;
       top: 1.1rem;
@@ -1719,10 +1726,10 @@
           if (step >= steps) { clearInterval(fadeOut); bgAudio.pause(); }
         }, 8000 / steps);
 
-        // Show end links 2s after fade completes (8s fade + 2s buffer = 10s)
+        // Show end links shortly after fade completes (8s fade + 1s buffer = 9s → 3s sooner = 7s)
         setTimeout(() => {
           document.getElementById('end-links').classList.add('visible');
-        }, 10000);
+        }, 7000);
       }, 111000);
 
     }, { once: true });
@@ -1783,8 +1790,8 @@
       <p>This project started as a question: could I build a fully realized interactive art experience without ever opening a design tool?</p>
       <p>No Figma. No wireframes. No mockups. Just conversation, iteration, and trust in the process.</p>
       <p>The entire experience was built through vibe coding, describing what I wanted in plain language and letting the code emerge from dialogue. I used Cursor with Claude Sonnet 4.6 as my collaborator, working in an iterative loop where each prompt refined the last. The door, the sky, the read-along scroll, the creatures, the sunrise. All of it built without writing a single line of code directly.</p>
-      <p>The story was written in collaboration with Claude, starting from my own bio and pushed toward something more mythic. A Tolkien register, a dystopian undercurrent, a hopeful ending. We went through a dozen drafts before it felt right.</p>
-      <p>The music is by I Am Robot and Proud. The narration was generated using ElevenLabs, a mature British female voice named Jane, chosen deliberately for gravitas without pomposity.</p>
+      <p>The story was written in collaboration with Claude, starting from <a href="https://www.lanceshields.design/about" target="_blank" rel="noopener">my own bio</a> and pushed toward something more mythic. A Tolkien register, a dystopian undercurrent, a hopeful ending. We went through a dozen drafts before it felt right.</p>
+      <p>The music is by <a href="http://robotandproud.com/" target="_blank" rel="noopener">I Am Robot and Proud</a>. The narration was generated using <a href="https://elevenlabs.io/" target="_blank" rel="noopener">ElevenLabs</a>, a mature British female voice named Jane, chosen deliberately for gravitas without pomposity.</p>
       <p>The final product, audio aside, is a single HTML file. 76 kilobytes. Two minutes long. Built in half a day. The traditional version would have required design, writing, development, recording, licensing, and integration. A week, maybe two, and a team.</p>
       <p>The door was always there.</p>
       <p>I just had to imagine and describe it.</p>
