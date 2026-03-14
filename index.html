@@ -879,7 +879,7 @@
     }
 
     #crawlWrap.active #crawlText {
-      animation: crawl-up 126s linear forwards;
+      animation: crawl-up 128s forwards;
     }
 
     /* Narrator highlight — dims all, then illuminates the active cue */
@@ -894,10 +894,14 @@
     }
 
     @keyframes crawl-up {
-      from  { transform: translateX(-50%) translateY(0); }
-      /* At ~81s the last big paragraph begins — scroll slows 25% from here */
-      64.3% { transform: translateX(-50%) translateY(calc(-69.2% - 69.2vh)); }
-      to    { transform: translateX(-50%) translateY(calc(-100% - 100vh)); }
+      /* First 40% of time: linear, covers first half of distance */
+      from { transform: translateX(-50%) translateY(0);
+             animation-timing-function: linear; }
+      /* Second half of distance: ease-out to a slow stop at screen centre */
+      40%  { transform: translateX(-50%) translateY(calc(-50% - 25vh));
+             animation-timing-function: cubic-bezier(0.4, 0, 0.05, 1); }
+      /* End: last line sits at screen centre (50vh short of fully off-screen) */
+      to   { transform: translateX(-50%) translateY(calc(-100% - 50vh)); }
     }
 
     /* ───── SKY CREATURES ───── */
@@ -1587,57 +1591,6 @@
     ];
 
     let activeCueId = null;
-    let lastLineDone = false;
-
-    function centerLastLine() {
-      if (lastLineDone) return;
-      lastLineDone = true;
-
-      const crawlText = document.getElementById('crawlText');
-      const cn9 = document.getElementById('cn9');
-
-      // Capture current animated position and freeze it
-      const matrix = new DOMMatrix(window.getComputedStyle(crawlText).transform);
-      const currentY = matrix.m42;
-      crawlText.style.animation = 'none';
-      crawlText.style.transform = `translateX(-50%) translateY(${currentY}px)`;
-      void crawlText.offsetHeight; // force reflow
-
-      // Calculate how far to move so cn9 sits in the center of the screen
-      const rect = cn9.getBoundingClientRect();
-      const cn9Center = rect.top + rect.height / 2;
-      const screenCenter = window.innerHeight / 2;
-      const targetY = currentY - (cn9Center - screenCenter);
-
-      // Ease cn9 to center over 2.5s
-      const duration = 2500;
-      const startTime = performance.now();
-
-      function easeStep(ts) {
-        const p = Math.min((ts - startTime) / duration, 1);
-        const eased = 1 - Math.pow(1 - p, 3); // ease-out cubic
-        crawlText.style.transform = `translateX(-50%) translateY(${currentY + (targetY - currentY) * eased}px)`;
-        if (p < 1) { requestAnimationFrame(easeStep); return; }
-
-        // Hold 5 seconds then fade all crawl text out; fade music simultaneously
-        setTimeout(() => {
-          crawlText.style.transition = 'opacity 3s ease';
-          crawlText.style.opacity = '0';
-
-          // Fade music out over 6s alongside the text fade
-          const fadeDuration = 6000;
-          const steps = 60;
-          const startVol = bgAudio.volume;
-          let step = 0;
-          const fadeOut = setInterval(() => {
-            step++;
-            bgAudio.volume = Math.max(0, startVol * (1 - step / steps));
-            if (step >= steps) { clearInterval(fadeOut); bgAudio.pause(); }
-          }, fadeDuration / steps);
-        }, 5000);
-      }
-      requestAnimationFrame(easeStep);
-    }
 
     narratorAudio.addEventListener('timeupdate', () => {
       const t = narratorAudio.currentTime;
@@ -1649,9 +1602,26 @@
         if (activeCueId) document.getElementById(activeCueId)?.classList.remove('nar-active');
         if (currentId)   document.getElementById(currentId)?.classList.add('nar-active');
         activeCueId = currentId;
-        if (currentId === 'cn9') centerLastLine();
       }
     });
+
+    // When scroll animation ends: hold 5s then fade text + music out together
+    document.getElementById('crawlText').addEventListener('animationend', () => {
+      setTimeout(() => {
+        const crawlText = document.getElementById('crawlText');
+        crawlText.style.transition = 'opacity 3s ease';
+        crawlText.style.opacity = '0';
+
+        const steps = 60;
+        const startVol = bgAudio.volume;
+        let step = 0;
+        const fadeOut = setInterval(() => {
+          step++;
+          bgAudio.volume = Math.max(0, startVol * (1 - step / steps));
+          if (step >= steps) { clearInterval(fadeOut); bgAudio.pause(); }
+        }, 3000 / steps);
+      }, 5000);
+    }, { once: true });
 
     // Step 3 — after welcome text fades, roll the crawl and start narrator
     welcomeEl.addEventListener('animationend', () => {
