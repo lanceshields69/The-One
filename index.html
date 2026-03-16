@@ -889,17 +889,17 @@
     @media (max-width: 600px) {
       #crawlText { width: 80%; }
       .welcome-text { white-space: normal; width: 80%; text-align: center; }
+    }
 
-      /* Mobile crawl: normal speed through the first half (0→46.3%) and into
-         cn5. At 52% (~one paragraph before "He does not believe...") the scroll
-         speeds up 15%. Endpoint reached at 94% then holds to 100%. */
-      @keyframes crawl-up {
-        from  { transform: translateX(-50%) translateY(0); }
-        46.3% { transform: translateX(-50%) translateY(calc(-50% - 50vh)); }
-        52%   { transform: translateX(-50%) translateY(calc(-55.3% - 55.3vh)); }
-        94%   { transform: translateX(-50%) translateY(calc(-100% - 100vh)); }
-        to    { transform: translateX(-50%) translateY(calc(-100% - 100vh)); }
-      }
+    /* Mobile crawl speed-up: normal pace through first half (0→46.3%) and into
+       cn5, then 15% faster from 52% (~one paragraph before "He does not believe").
+       Endpoint reached at 94%, holds to 100%. Applied via JS on mobile only. */
+    @keyframes crawl-up-mobile {
+      from  { transform: translateX(-50%) translateY(0); }
+      46.3% { transform: translateX(-50%) translateY(calc(-50% - 50vh)); }
+      52%   { transform: translateX(-50%) translateY(calc(-55.3% - 55.3vh)); }
+      94%   { transform: translateX(-50%) translateY(calc(-100% - 100vh)); }
+      to    { transform: translateX(-50%) translateY(calc(-100% - 100vh)); }
     }
 
     #crawlText h2 {
@@ -1816,6 +1816,10 @@
     welcomeEl.addEventListener('animationend', () => {
       crawlWrap.classList.add('active');
       document.body.classList.add('crawling');
+      // On mobile use the speed-up variant (can't override @keyframes inside @media on iOS)
+      if (window.innerWidth <= 600) {
+        crawlText.style.animation = 'crawl-up-mobile 136s linear forwards';
+      }
       narratorAudio.volume = 1.0;
       setTimeout(() => narratorAudio.play().catch(() => {}), 5000);
 
