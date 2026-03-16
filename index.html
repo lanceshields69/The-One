@@ -1802,10 +1802,25 @@
     welcomeEl.addEventListener('animationend', () => {
       crawlWrap.classList.add('active');
       document.body.classList.add('crawling');
+
+      // On mobile the text reflows taller (narrower column = more line-wraps), which makes
+      // the CSS -100% translateY cover more pixels in the same 136s → text scrolls faster
+      // than the narrator. Fix: measure actual text height and scale the duration so px/sec
+      // stays constant. Desktop is untouched (guard on innerWidth).
+      let crawlDuration = 136; // default (desktop)
+      if (window.innerWidth <= 600) {
+        const textH = crawlText.scrollHeight;
+        const vhPx  = window.innerHeight;
+        // Desktop reference: ~1200px text + ~900px viewport = ~2100px / 136s ≈ 15.4 px/s
+        const DESKTOP_PX_PER_SEC = 15.4;
+        crawlDuration = Math.round((textH + vhPx) / DESKTOP_PX_PER_SEC);
+        crawlText.style.animationDuration = crawlDuration + 's';
+      }
+
       narratorAudio.volume = 1.0;
       setTimeout(() => narratorAudio.play().catch(() => {}), 5000);
 
-      // Fade text + music out 25s before scroll finishes (136s total → trigger at 111s)
+      // Fade text + music out 25s before scroll finishes
       setTimeout(() => {
         const crawlText = document.getElementById('crawlText');
         crawlText.style.transition = 'opacity 8s ease';
@@ -1824,7 +1839,7 @@
         setTimeout(() => {
           document.getElementById('end-links').classList.add('visible');
         }, 7000);
-      }, 111000);
+      }, (crawlDuration - 25) * 1000);
 
     }, { once: true });
 
